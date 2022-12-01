@@ -1,0 +1,20 @@
+all: xxo
+MOC=/usr/lib64/qt6/libexec/moc
+
+
+DEFINES=`pkg-config --cflags Qt6Gui Qt6Widgets Qt6SvgWidgets`
+
+moc_KuhMainWindow.cpp: KuhMainWindow.h
+	$(MOC) $(DEFINES) $(INCPATH) $< -o $@
+	
+moc_XYButton.cpp: XYButton.h
+	$(MOC) $(DEFINES) $(INCPATH) $< -o $@	
+
+xxo: main.cc KuhMainWindow.cc moc_KuhMainWindow.cpp KuhMainWindow.cc XYButton.cc moc_XYButton.cpp XYButton.h
+	g++ -g -Wall -o xxo main.cc \
+	KuhMainWindow.cc \
+	moc_KuhMainWindow.cpp \
+	XYButton.cc \
+	moc_XYButton.cpp \
+	$(DEFINES) \
+	`pkg-config --libs Qt6Gui Qt6Widgets Qt6SvgWidgets`
