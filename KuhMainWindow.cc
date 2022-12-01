@@ -12,12 +12,17 @@
 #include "qgridlayout.h"
 #include "qframe.h"
 #include <iostream>
+#include <set>
 
 KuhMainWindow::KuhMainWindow(QWidget *parent)
 : QMainWindow( parent ),
   buttons(),
   SIZE(3),
-  rd()
+  rd(),
+  own_symbol( XYButton::State::O ),
+  other_symbol( XYButton::State::X ),
+  all_button_combinations(),
+  all_buttons_linear()
 {
 
     QAction *actionNewGame;
@@ -56,29 +61,53 @@ KuhMainWindow::KuhMainWindow(QWidget *parent)
     	for( unsigned col = 0; col < SIZE; col++ ) {
     		buttons[row].resize(SIZE);
 
-    		auto button = buttons[row][col] = new XYButton();
+    		XYButton* button = buttons[row][col] = new XYButton();
+    		all_buttons_linear.push_back( button );
+
     		gridLayout->addWidget( button, row, col );
     		button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     		connect(button, SIGNAL (userPlayed()), this, SLOT (userPlayed()));
     	}
     }
+
+    all_button_combinations = getAllCombinationOfRows();
 }
 
 void KuhMainWindow::userPlayed()
 {
-	playRandom();
+	SCORE my_score = find2InLine( own_symbol );
+	SCORE other_score = find2InLine( other_symbol );
+
+	SCORE best_score = my_score;
+
+	if( my_score.empty() && !other_score.empty() ) {
+		best_score = other_score;
+	}
+
+	if( best_score.empty() ) {
+		playRandomOf( all_buttons_linear );
+		return;
+	}
+
+	if( best_score.rbegin()->first < my_score.rbegin()->first ) {
+		best_score = my_score;
+	}
+
+	if( best_score.rbegin()->first < other_score.rbegin()->first ) {
+		best_score = other_score;
+	}
+
+	playRandomOf( best_score.rbegin()->second );
 }
 
 
-void KuhMainWindow::playRandom()
+void KuhMainWindow::playRandomOf( BUTTON_ROW & buttons )
 {
-	std::vector<XYButton*> empty_buttons;
+	BUTTON_ROW empty_buttons;
 
-	for( auto & row : buttons ) {
-		for( auto & button : row ) {
-			if( button->isBlank() ) {
-				empty_buttons.push_back( button );
-			}
+	for( auto button : buttons ) {
+		if( button->isBlank() ) {
+			empty_buttons.push_back( button );
 		}
 	}
 
@@ -89,7 +118,7 @@ void KuhMainWindow::playRandom()
 	auto rng = std::default_random_engine { rd() };
 	std::shuffle(std::begin(empty_buttons), std::end(empty_buttons), rng);
 
-	(*empty_buttons.begin())->setState( XYButton::State::O );
+	(*empty_buttons.begin())->setState( own_symbol );
 }
 
 void KuhMainWindow::newGame()
@@ -99,6 +128,81 @@ void KuhMainWindow::newGame()
 			button->reset();
 		}
 	}
+}
+
+KuhMainWindow::BUTTON_ROWS_AND_COLS KuhMainWindow::getAllCombinationOfRows()
+{
+	BUTTON_ROWS_AND_COLS all_rows;
+
+	// vertically
+	for( auto & row : buttons ) {
+		all_rows.push_back( row );
+	}
+
+	// horizontal
+	for( unsigned col = 0; col < SIZE; col++ ) {
+		BUTTON_ROW button_row;
+		for( unsigned row = 0; row < SIZE; row++ ) {
+			button_row.push_back( buttons[row][col] );
+		}
+		all_rows.push_back( button_row );
+	}
+
+	// cross
+	{
+		BUTTON_ROW button_row;
+
+		for( unsigned col = 0, row = 0; col < SIZE && row < SIZE; col++, row++ ) {
+			button_row.push_back( buttons[row][col] );
+		}
+		all_rows.push_back( button_row );
+	}
+
+	{
+		BUTTON_ROW button_row;
+		for( int col = SIZE-1, row = 0; col >= 0 && row < static_cast<int>(SIZE); col--, row++ ) {
+			button_row.push_back( buttons[row][col] );
+		}
+		all_rows.push_back( button_row );
+	}
+
+	return all_rows;
+}
+
+KuhMainWindow::SCORE KuhMainWindow::find2InLine( XYButton::State symbol )
+{
+	SCORE score;
+
+	for( auto & row : all_button_combinations ) {
+		auto score4row = find2InLine( row, symbol );
+		score.insert( score4row.begin(), score4row.end() );
+	}
+
+	return score;
+}
+
+KuhMainWindow::SCORE KuhMainWindow::find2InLine( BUTTON_ROW & row,  XYButton::State symbol )
+{
+	std::set<decltype(symbol)> symbols;
+	unsigned symbol_count = 0;
+
+	for( auto * button : row ) {
+		auto button_symbol = button->getState();
+
+		if( button_symbol != XYButton::State::BLANK ) {
+			symbols.insert( button_symbol );
+
+			if( symbol == button_symbol ) {
+				symbol_count++;
+			}
+		}
+	}
+
+	if( symbols.size() != 1 ) {
+		return {};
+	}
+
+	return { std::make_pair(symbol_count, row) };
 }
 
 
