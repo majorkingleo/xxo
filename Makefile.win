@@ -1,0 +1,22 @@
+all: xxo
+
+HOST=x86_64-w64-mingw32
+PKGCONFIG=$(HOST)-pkg-config
+CXX=$(HOST)-g++
+
+DEFINES=`$(PKGCONFIG) --cflags Qt5Gui Qt5Widgets Qt5Svg`
+
+moc_KuhMainWindow.cpp: KuhMainWindow.h
+	moc-qt5 $(DEFINES) $(INCPATH) $< -o $@
+	
+moc_XYButton.cpp: XYButton.h
+	moc-qt5 $(DEFINES) $(INCPATH) $< -o $@	
+
+xxo: main.cc KuhMainWindow.cc moc_KuhMainWindow.cpp KuhMainWindow.cc XYButton.cc moc_XYButton.cpp XYButton.h
+	$(CXX) -g -Wall -o xxo main.cc \
+	KuhMainWindow.cc \
+	moc_KuhMainWindow.cpp \
+	XYButton.cc \
+	moc_XYButton.cpp \
+	$(DEFINES) \
+	`$(PKGCONFIG) --libs Qt5Gui Qt5Widgets Qt5Svg`
