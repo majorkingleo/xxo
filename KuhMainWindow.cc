@@ -10,19 +10,39 @@
 #include "qmenubar.h"
 #include "qapplication.h"
 #include "qgridlayout.h"
+#include "qstatusbar.h"
 #include "qframe.h"
 #include <iostream>
 #include <set>
+
+KuhMainWindow::Game::Game( XYButton::State symbol_own )
+: symbols()
+{
+	reset( symbol_own );
+}
+
+void KuhMainWindow::Game::reset( XYButton::State symbol_own )
+{
+	symbols[Symbol_OWN] = symbol_own;
+
+	if( symbols[Symbol_OWN] == XYButton::State::X ) {
+		symbols[Symbol_OTHER] = XYButton::State::O;
+	} else {
+		symbols[Symbol_OTHER] = XYButton::State::X;
+	}
+
+	symbols[Symbol_WINNER] = XYButton::State::BLANK;
+}
 
 KuhMainWindow::KuhMainWindow(QWidget *parent)
 : QMainWindow( parent ),
   buttons(),
   SIZE(3),
   rd(),
-  own_symbol( XYButton::State::O ),
-  other_symbol( XYButton::State::X ),
+  game(),
   all_button_combinations(),
-  all_buttons_linear()
+  all_buttons_linear(),
+  turn(0)
 {
 
     QAction *actionNewGame;
@@ -71,22 +91,19 @@ KuhMainWindow::KuhMainWindow(QWidget *parent)
     }
 
     all_button_combinations = getAllCombinationOfRows();
+
+    createStatusMessage();
 }
 
-void KuhMainWindow::userPlayed()
+KuhMainWindow::SCORE KuhMainWindow::findBestScore()
 {
-	SCORE my_score = find2InLine( own_symbol );
-	SCORE other_score = find2InLine( other_symbol );
+	SCORE my_score = find2InLine( game.symbols[Symbol_OWN] );
+	SCORE other_score = find2InLine( game.symbols[Symbol_OTHER] );
 
 	SCORE best_score = my_score;
 
 	if( my_score.empty() && !other_score.empty() ) {
 		best_score = other_score;
-	}
-
-	if( best_score.empty() ) {
-		playRandomOf( all_buttons_linear );
-		return;
 	}
 
 	if( best_score.rbegin()->first < my_score.rbegin()->first ) {
@@ -97,7 +114,37 @@ void KuhMainWindow::userPlayed()
 		best_score = other_score;
 	}
 
-	playRandomOf( best_score.rbegin()->second );
+	std::cout << "Best Score: " << best_score.rbegin()->first
+			  << " type: " << static_cast<int>((*best_score.rbegin()->second.begin())->getState())
+			  << std::endl;
+
+	return best_score;
+}
+
+void KuhMainWindow::userPlayed()
+{
+	turn++;
+
+	SCORE best_score = findBestScore();
+
+	if( best_score.empty() ) {
+		playRandomOf( all_buttons_linear );
+		createStatusMessage();
+		return;
+	}
+
+	if( best_score.rbegin()->first == SIZE ) {
+		game.symbols[Symbol_WINNER] = (*best_score.rbegin()->second.begin())->getState();
+	} else {
+		playRandomOf( best_score.rbegin()->second );
+		best_score = findBestScore();
+
+		if( best_score.rbegin()->first == SIZE ) {
+			game.symbols[Symbol_WINNER] = (*best_score.rbegin()->second.begin())->getState();
+		}
+	}
+
+	createStatusMessage();
 }
 
 
@@ -118,7 +165,8 @@ void KuhMainWindow::playRandomOf( BUTTON_ROW & buttons )
 	auto rng = std::default_random_engine { rd() };
 	std::shuffle(std::begin(empty_buttons), std::end(empty_buttons), rng);
 
-	(*empty_buttons.begin())->setState( own_symbol );
+	(*empty_buttons.begin())->setState( game.symbols[Symbol_OWN] );
+	turn++;
 }
 
 void KuhMainWindow::newGame()
@@ -128,6 +176,10 @@ void KuhMainWindow::newGame()
 			button->reset();
 		}
 	}
+
+	turn = 0;
+	game.symbols[Symbol_WINNER] = XYButton::State::BLANK;
+	createStatusMessage();
 }
 
 KuhMainWindow::BUTTON_ROWS_AND_COLS KuhMainWindow::getAllCombinationOfRows()
@@ -198,6 +250,20 @@ KuhMainWindow::SCORE KuhMainWindow::find2InLine( BUTTON_ROW & row,  XYButton::St
 		}
 	}
 
+	std::string buf;
+	for( auto * button : row ) {
+		switch( button->getState() )
+		{
+			case XYButton::State::BLANK: buf += " "; break;
+			case XYButton::State::X: 	 buf += "X"; break;
+			case XYButton::State::O: 	 buf += "O"; break;
+		}
+	}
+
+
+	//std::cout << "symbol_count:" << symbol_count << " " << buf << std::endl;
+	QMessageLogger().debug( "Symbol count: %d %s", symbol_count, buf.c_str() );
+
 	if( symbols.size() != 1 ) {
 		return {};
 	}
@@ -205,4 +271,23 @@ KuhMainWindow::SCORE KuhMainWindow::find2InLine( BUTTON_ROW & row,  XYButton::St
 	return { std::make_pair(symbol_count, row) };
 }
 
+
+void KuhMainWindow::createStatusMessage()
+{
+	if( game.symbols[Symbol_WINNER] == XYButton::State::BLANK ) {
+		if( turn == 0 ) {
+			statusBar()->showMessage( QString::fromUtf8("You start, it's your turn." ) );
+		} else if( turn % 2 == 0 ) {
+			statusBar()->showMessage( QString::fromUtf8("It's your turn." ) );
+		}
+
+		return;
+	}
+
+	if( game.symbols[Symbol_WINNER] == game.symbols[Symbol_OWN] ) {
+		statusBar()->showMessage( QString::fromUtf8("I'm the winner!!" ) );
+	} else {
+		statusBar()->showMessage( QString::fromUtf8("Congratulations, you win!" ) );
+	}
+}
 
