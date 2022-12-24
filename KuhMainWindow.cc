@@ -106,6 +106,11 @@ KuhMainWindow::SCORE KuhMainWindow::findBestScore()
 		best_score = other_score;
 	}
 
+	if( best_score.empty() ) {
+		// game is already over
+		return best_score;
+	}
+
 	if( best_score.rbegin()->first < my_score.rbegin()->first ) {
 		best_score = my_score;
 	}
@@ -114,9 +119,11 @@ KuhMainWindow::SCORE KuhMainWindow::findBestScore()
 		best_score = other_score;
 	}
 
+	/*
 	std::cout << "Best Score: " << best_score.rbegin()->first
 			  << " type: " << static_cast<int>((*best_score.rbegin()->second.begin())->getState())
 			  << std::endl;
+	*/
 
 	return best_score;
 }
@@ -138,6 +145,11 @@ void KuhMainWindow::userPlayed()
 	} else {
 		playRandomOf( best_score.rbegin()->second );
 		best_score = findBestScore();
+
+		if( best_score.empty() ) {
+			// game is already over
+			return;
+		}
 
 		if( best_score.rbegin()->first == SIZE ) {
 			game.symbols[Symbol_WINNER] = (*best_score.rbegin()->second.begin())->getState();
