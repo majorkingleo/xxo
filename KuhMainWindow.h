@@ -57,10 +57,18 @@ public:
 
 private slots:
 	void userPlayed();
-	void newGame();
+
+	void newGame() {
+		newGame( game.symbols[Symbol_OWN] );
+	}
+
+	void takeX();
+	void takeO();
 
 
 private:
+	void newGame( XYButton::State symbol_own );
+
 	void playRandomOf( BUTTON_ROW & buttons );
 	SCORE find2InLine( XYButton::State symbol  );
 	SCORE find2InLine( BUTTON_ROW & row, XYButton::State symbol );

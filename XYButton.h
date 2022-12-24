@@ -24,6 +24,7 @@ public:
 
 private:
 	State state;
+	State userSymbol;
 
 public:
 	XYButton();
@@ -38,6 +39,18 @@ public:
 	void reset() {
 		setState( State::BLANK );
 		setDisabled(false);
+	}
+
+	void setUserSymbol( State state ) {
+		userSymbol = state;
+	}
+
+	void setComputerSymbol( State state ) {
+		switch( state )
+		{
+		case State::X: setUserSymbol( State::O ); break;
+		case State::O: setUserSymbol( State::X ); break;
+		}
 	}
 
 signals:

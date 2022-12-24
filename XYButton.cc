@@ -11,7 +11,8 @@
 
 XYButton::XYButton()
 : QPushButton(),
-  state( State::BLANK )
+  state( State::BLANK ),
+  userSymbol( State::X )
 {
 	setSizePolicy( QSizePolicy::Preferred, QSizePolicy::Preferred );
 	setLayout( new QHBoxLayout(this) );
@@ -68,7 +69,7 @@ void XYButton::userClicked()
 		return;
 	}
 
-	setState( State::X );
+	setState( userSymbol );
 
 	emit userPlayed();
 }

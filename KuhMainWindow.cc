@@ -1,5 +1,4 @@
-/*
- * KuhMainWindow.cc
+/* KuhMainWindow.cc
  *
  *  Created on: 26.11.2022
  *      Author: martin
@@ -57,17 +56,46 @@ KuhMainWindow::KuhMainWindow(QWidget *parent)
     actionQuit->setText("Quit");
 
 	QMenuBar *menuBar = new QMenuBar(this);
-	QMenu *menuTest = new QMenu(menuBar);
-	menuTest->setTitle( "Game" );
+	QMenu *menuGame = new QMenu(menuBar);
+	menuGame->setTitle( "Game" );
 	setMenuBar(menuBar);
 
-	menuBar->addAction(menuTest->menuAction());
+	menuBar->addAction(menuGame->menuAction());
 
-    menuTest->addAction(actionNewGame);
-    menuTest->addAction(actionQuit);
+    menuGame->addAction(actionNewGame);
+    menuGame->addAction(actionQuit);
 
     connect(actionQuit, SIGNAL (triggered()), QApplication::instance(), SLOT (quit()));
     connect(actionNewGame, SIGNAL (triggered()), this, SLOT (newGame()));
+
+
+    QAction *actionItakeX = new QAction(this);
+    actionItakeX->setObjectName(QString::fromUtf8("I take X"));
+    actionItakeX->setText("I take X");
+    actionItakeX->setCheckable( true );
+    actionItakeX->setChecked(true);
+    connect(actionItakeX, &QAction::triggered, this, &KuhMainWindow::takeX);
+
+    QAction *actionItakeO = new QAction(this);
+    actionItakeO->setObjectName(QString::fromUtf8("I take O"));
+    actionItakeO->setText("I take O");
+    actionItakeO->setCheckable( true );
+    connect(actionItakeO, &QAction::triggered, this, &KuhMainWindow::takeO);
+
+
+    QActionGroup *groupTake = new QActionGroup( this );
+    groupTake->addAction( actionItakeX );
+    groupTake->addAction( actionItakeO );
+    groupTake->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+
+    QMenu *menuOptions = new QMenu(menuBar);
+    menuOptions->setTitle( "Options" );
+    menuBar->addAction(menuOptions->menuAction());
+
+    menuOptions->addAction( actionItakeX );
+    menuOptions->addAction( actionItakeO );
+
 
     auto *f = new QFrame();
     setCentralWidget(f);
@@ -181,16 +209,17 @@ void KuhMainWindow::playRandomOf( BUTTON_ROW & buttons )
 	turn++;
 }
 
-void KuhMainWindow::newGame()
+void KuhMainWindow::newGame(  XYButton::State symbol_own )
 {
-	for( auto & row : buttons ) {
-		for( auto & button : row ) {
-			button->reset();
-		}
-	}
+	std::for_each( all_buttons_linear.begin(), all_buttons_linear.end(),
+			[symbol_own]( auto button ) {
+				button->reset();
+				button->setComputerSymbol( symbol_own );
+			}
+	);
 
 	turn = 0;
-	game.symbols[Symbol_WINNER] = XYButton::State::BLANK;
+	game.reset( symbol_own );
 	createStatusMessage();
 }
 
@@ -312,4 +341,15 @@ void KuhMainWindow::createStatusMessage()
 	endGame();
 }
 
+void KuhMainWindow::takeX()
+{
+	QMessageLogger().debug( "takeX" );
+	newGame( XYButton::State::O );
+}
+
+void KuhMainWindow::takeO()
+{
+	QMessageLogger().debug( "takeO" );
+	newGame( XYButton::State::X );
+}
 
