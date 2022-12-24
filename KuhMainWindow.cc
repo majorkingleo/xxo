@@ -22,6 +22,10 @@ KuhMainWindow::Game::Game( XYButton::State symbol_own )
 
 void KuhMainWindow::Game::reset( XYButton::State symbol_own )
 {
+	if( symbols[Symbol_OWN] != symbol_own ) {
+		who_starts = swapSymbol( who_starts );
+	}
+
 	symbols[Symbol_OWN] = symbol_own;
 
 	if( symbols[Symbol_OWN] == XYButton::State::X ) {
@@ -96,6 +100,31 @@ KuhMainWindow::KuhMainWindow(QWidget *parent)
     menuOptions->addAction( actionItakeX );
     menuOptions->addAction( actionItakeO );
 
+    menuOptions->addSeparator();
+
+
+
+    QAction *actionIstart = new QAction(this);
+    actionIstart->setObjectName(QString::fromUtf8("I start"));
+    actionIstart->setText("I start");
+    actionIstart->setCheckable( true );
+    actionIstart->setChecked(true);
+    connect(actionIstart, &QAction::triggered, this, &KuhMainWindow::Istart);
+
+    QAction *actionComuterStarts = new QAction(this);
+    actionComuterStarts->setObjectName(QString::fromUtf8("Computer starts"));
+    actionComuterStarts->setText("Comuter starts");
+    actionComuterStarts->setCheckable( true );
+    connect(actionComuterStarts, &QAction::triggered, this, &KuhMainWindow::ComputerStarts);
+
+
+    QActionGroup *groupStart = new QActionGroup( this );
+    groupStart->addAction( actionIstart );
+    groupStart->addAction( actionComuterStarts );
+    groupStart->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+    menuOptions->addAction( actionIstart );
+    menuOptions->addAction( actionComuterStarts );
 
     auto *f = new QFrame();
     setCentralWidget(f);
@@ -220,6 +249,12 @@ void KuhMainWindow::newGame(  XYButton::State symbol_own )
 
 	turn = 0;
 	game.reset( symbol_own );
+
+	QMessageLogger().debug( "game.who_starts: %d symbol_own: %d", game.who_starts, symbol_own );
+	if( game.who_starts == symbol_own ) {
+		userPlayed();
+	}
+
 	createStatusMessage();
 }
 
@@ -352,4 +387,20 @@ void KuhMainWindow::takeO()
 	QMessageLogger().debug( "takeO" );
 	newGame( XYButton::State::X );
 }
+
+
+void KuhMainWindow::Istart()
+{
+	QMessageLogger().debug( "Istart" );
+	game.setWhoStarts( game.getUserSymbol() );
+	newGame();
+}
+
+void KuhMainWindow::ComputerStarts()
+{
+	QMessageLogger().debug( "ComputerStarts" );
+	game.setWhoStarts( game.getComputerSymbol() );
+	newGame();
+}
+
 

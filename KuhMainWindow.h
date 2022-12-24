@@ -36,11 +36,32 @@ private:
 	 {
 	 public:
 		 std::array<XYButton::State,Symbol_LAST+1> symbols;
+		 XYButton::State who_starts;
 
 	 public:
 		 Game( XYButton::State symbol_own = XYButton::State::O );
 
 		 void reset( XYButton::State symbol_own );
+		 void setWhoStarts( XYButton::State symbol ) {
+			 who_starts = symbol;
+		 }
+
+		 XYButton::State getComputerSymbol() const {
+			 return symbols[Symbol_OWN];
+		 }
+
+		 XYButton::State getUserSymbol() const {
+			 return symbols[Symbol_OTHER];
+		 }
+
+		 XYButton::State swapSymbol( XYButton::State symbol ) const {
+			 switch( symbol ) {
+			 case  XYButton::State::X: return XYButton::State::O;
+			 case  XYButton::State::O: return XYButton::State::X;
+			 default:
+				 return XYButton::State::X;
+			 }
+		 }
 	 };
 
 protected:
@@ -64,7 +85,8 @@ private slots:
 
 	void takeX();
 	void takeO();
-
+	void Istart();
+	void ComputerStarts();
 
 private:
 	void newGame( XYButton::State symbol_own );
