@@ -68,7 +68,22 @@ private:
 	BUTTON_ROWS_AND_COLS getAllCombinationOfRows();
 
 	void createStatusMessage();
-	void endGame();
+
+	void endGame() {
+		std::for_each( all_buttons_linear.begin(), all_buttons_linear.end(),
+				[]( auto button ) {
+					button->setDisabled(true);
+				}
+		);
+	}
+
+	BUTTON_ROW::size_type countBlankButtons() {
+		return std::count_if( all_buttons_linear.begin(),  all_buttons_linear.end(),
+							  []( auto button ){
+									return button->isBlank();
+							   }
+							);
+	}
 };
 
 

@@ -287,6 +287,13 @@ KuhMainWindow::SCORE KuhMainWindow::find2InLine( BUTTON_ROW & row,  XYButton::St
 void KuhMainWindow::createStatusMessage()
 {
 	if( game.symbols[Symbol_WINNER] == XYButton::State::BLANK ) {
+
+		if( countBlankButtons() == 0 ) {
+			statusBar()->showMessage( QString::fromUtf8("Tie! Let's try it again!" ) );
+			endGame();
+			return;
+		}
+
 		if( turn == 0 ) {
 			statusBar()->showMessage( QString::fromUtf8("You start, it's your turn." ) );
 		} else if( turn % 2 == 0 ) {
@@ -306,9 +313,3 @@ void KuhMainWindow::createStatusMessage()
 }
 
 
-void KuhMainWindow::endGame()
-{
-	for( auto button : all_buttons_linear ) {
-		button->setDisabled(true);
-	}
-}
