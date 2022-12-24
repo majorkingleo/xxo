@@ -68,6 +68,7 @@ private:
 	BUTTON_ROWS_AND_COLS getAllCombinationOfRows();
 
 	void createStatusMessage();
+	void endGame();
 };
 
 

@@ -37,6 +37,7 @@ public:
 
 	void reset() {
 		setState( State::BLANK );
+		setDisabled(false);
 	}
 
 signals:

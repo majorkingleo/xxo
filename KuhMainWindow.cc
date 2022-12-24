@@ -301,5 +301,14 @@ void KuhMainWindow::createStatusMessage()
 	} else {
 		statusBar()->showMessage( QString::fromUtf8("Congratulations, you win!" ) );
 	}
+
+	endGame();
 }
 
+
+void KuhMainWindow::endGame()
+{
+	for( auto button : all_buttons_linear ) {
+		button->setDisabled(true);
+	}
+}
